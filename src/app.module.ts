@@ -6,15 +6,19 @@ import { AppService } from './app.service';
 import { PlacesModule } from './modules/places/places.module';
 
 import config from './config';
+import auth0 from './config/auth0';
+import s3 from './config/s3';
+
 import { LogMiddleware } from './middleware/log.middleware';
 import { Auth0Module } from './auth0/auth0.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
     // Configuration (made global)
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [config],
+      load: [config, auth0, s3],
     }),
     // MongoDB
     MongooseModule.forRootAsync({
@@ -26,6 +30,7 @@ import { Auth0Module } from './auth0/auth0.module';
     }),
     PlacesModule,
     Auth0Module,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
