@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { Menu } from './menu.schema';
 
 @Schema()
 export class Place {
@@ -44,6 +45,9 @@ export class Place {
 
   @Prop({ required: true, default: true })
   canOrder: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'Menu', required: true })
+  menu: Types.ObjectId | Menu;
 }
 
 export type PlaceDocument = Place & Document;
