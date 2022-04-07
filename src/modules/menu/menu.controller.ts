@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -11,6 +13,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from 'src/libs/decorators';
 import { UserPayload } from 'src/types/auth0';
 import { PlaceService } from '../place/places.service';
+import { CategoryService } from './category.service';
 import { CreateMenuInput } from './dto/create-menu';
 import { UpdateMenuInput } from './dto/update-menu';
 import { MenuService } from './menu.service';
@@ -20,6 +23,7 @@ export class MenuController {
   constructor(
     private placeService: PlaceService,
     private menuService: MenuService,
+    private categoryService: CategoryService,
   ) {}
 
   @UseGuards(AuthGuard('jwt'))
@@ -50,7 +54,23 @@ export class MenuController {
     @Body() input: UpdateMenuInput,
     @CurrentUser() user: UserPayload,
   ) {
+    // Menu must be owned by user
     await this.menuService.ownedByUser(id, user.sub);
     return await this.menuService.updateById(id, input);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id')
+  async deleteMenu(@Param('id') id: string, @CurrentUser() user: UserPayload) {
+    // Menu must be owned by user
+    await this.menuService.ownedByUser(id, user.sub);
+    // Is menu in use by any place?
+    if (await this.menuService.inUse(id)) throw new BadRequestException();
+    return await this.menuService.deleteById(id);
+  }
+
+  @Get(':id/categories')
+  menuCategories(@Param('id') id: string) {
+    return this.categoryService.findAllByMenu(id);
   }
 }

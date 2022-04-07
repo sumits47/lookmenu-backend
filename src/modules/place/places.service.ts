@@ -23,7 +23,7 @@ export class PlaceService {
     // Create session
     const session = await this.placeModel.startSession();
 
-    // Create placeId & menuId
+    // Create placeId
     const placeId = new Types.ObjectId();
 
     // Wrap in transaction
@@ -43,7 +43,7 @@ export class PlaceService {
     await session.endSession();
 
     // Return created
-    return await this.findById(placeId).populate('menu');
+    return await this.findById(placeId);
   }
 
   async ownedByUser(placeId: string, userId: string): Promise<PlaceDocument> {
