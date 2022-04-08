@@ -18,12 +18,14 @@ import { CategoryService } from './category.service';
 import { CreateCategoryInput } from './dto/create-category';
 import { UpdateCategoryInput } from './dto/update-category';
 import { MenuService } from './menu.service';
+import { GroupService } from './group.service';
 
 @Controller('categories')
 export class CategoryController {
   constructor(
     private menuService: MenuService,
     private categoryService: CategoryService,
+    private groupService: GroupService,
     @InjectConnection() private conn: Connection,
   ) {}
 
@@ -126,5 +128,10 @@ export class CategoryController {
     // Category must be owned by user
     await this.categoryService.ownedByUser(id, user.sub);
     return await this.categoryService.deleteById(id);
+  }
+
+  @Get(':id/groups')
+  categoryGroups(@Param('id') id: string) {
+    return this.groupService.findAllByCategory(id);
   }
 }

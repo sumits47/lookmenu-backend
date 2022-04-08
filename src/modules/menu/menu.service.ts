@@ -8,6 +8,7 @@ import { Model, Types, ClientSession } from 'mongoose';
 import { Menu, MenuDocument } from 'src/models/menu.schema';
 import { Place, PlaceDocument } from 'src/models/place.schema';
 import { CategoryService } from './category.service';
+import { GroupService } from './group.service';
 
 @Injectable()
 export class MenuService {
@@ -15,6 +16,7 @@ export class MenuService {
     @InjectModel(Place.name) private placeModel: Model<PlaceDocument>,
     @InjectModel(Menu.name) private menuModel: Model<MenuDocument>,
     private categoryService: CategoryService,
+    private groupService: GroupService,
   ) {}
 
   findAllByPlace(placeId: string | Types.ObjectId) {
@@ -80,6 +82,9 @@ export class MenuService {
 
     // Wrap in transaction
     await session.withTransaction(async () => {
+      // Delete groups
+      await this.groupService.deleteAllByMenu(id, session);
+
       // Delete categories
       await this.categoryService.deleteAllByMenu(id, session);
 

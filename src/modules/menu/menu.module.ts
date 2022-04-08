@@ -8,6 +8,9 @@ import { PlaceService } from '../place/places.service';
 import { CategoryController } from './category.controller';
 import { CategoryService } from './category.service';
 import { Category, CategorySchema } from 'src/models/category.schema';
+import { Group, GroupSchema } from 'src/models/group.schema';
+import { GroupController } from './group.controller';
+import { GroupService } from './group.service';
 
 @Module({
   imports: [
@@ -24,10 +27,14 @@ import { Category, CategorySchema } from 'src/models/category.schema';
         name: Category.name,
         schema: CategorySchema,
       },
+      {
+        name: Group.name,
+        schema: GroupSchema,
+      },
     ]),
   ],
-  providers: [MenuService, PlaceService, CategoryService],
-  controllers: [MenuController, CategoryController],
+  providers: [MenuService, PlaceService, CategoryService, GroupService],
+  controllers: [MenuController, CategoryController, GroupController],
   exports: [MenuService],
 })
 export class MenuModule {}

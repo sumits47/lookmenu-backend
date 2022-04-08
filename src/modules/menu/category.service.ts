@@ -8,10 +8,12 @@ import { Model, Types, ClientSession } from 'mongoose';
 import { Category, CategoryDocument } from 'src/models/category.schema';
 import { MenuDocument } from 'src/models/menu.schema';
 import { PlaceDocument } from 'src/models/place.schema';
+import { GroupService } from './group.service';
 
 @Injectable()
 export class CategoryService {
   constructor(
+    private groupService: GroupService,
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
   ) {}
 
@@ -31,6 +33,7 @@ export class CategoryService {
     menuId: string | Types.ObjectId,
     session?: ClientSession,
   ) {
+    // Create category
     const [category] = await this.categoryModel.create(
       [
         {
@@ -40,6 +43,10 @@ export class CategoryService {
       ],
       { session },
     );
+
+    // Create group
+    await this.groupService.createDefaultGroup(menuId, category._id, session);
+
     return category;
   }
 
@@ -84,8 +91,24 @@ export class CategoryService {
     });
   }
 
-  deleteById(id: string | Types.ObjectId) {
-    return this.categoryModel.findByIdAndDelete(id);
+  async deleteById(id: string | Types.ObjectId) {
+    // Create session
+    const session = await this.categoryModel.startSession();
+
+    // Wrap in transaction
+    await session.withTransaction(async () => {
+      // Delete groups
+      await this.groupService.deleteAllByCategory(id, session);
+
+      // Delete category
+      await this.categoryModel.deleteOne(
+        { _id: new Types.ObjectId(id) },
+        { session },
+      );
+    });
+
+    // End session
+    await session.endSession();
   }
 
   deleteAllByMenu(menuId: string | Types.ObjectId, session?: ClientSession) {
@@ -105,46 +128,6 @@ export class CategoryService {
     );
     if (!category) return 0;
     else return category.position + 1;
-  }
-
-  async isFirst(id: string | Types.ObjectId): Promise<boolean> {
-    // Get category
-    const category = await this.findById(id);
-
-    // If not found
-    if (!category) throw new NotFoundException();
-
-    // Get menu's first
-    const first = await this.categoryModel.findOne(
-      {
-        menu: category.menu,
-      },
-      undefined,
-      { sort: { position: 1 } },
-    );
-
-    // Is first same as this category
-    return category._id.equals(first._id);
-  }
-
-  async isLast(id: string | Types.ObjectId): Promise<boolean> {
-    // Get category
-    const category = await this.findById(id);
-
-    // If not found
-    if (!category) throw new NotFoundException();
-
-    // Get menu's last
-    const last = await this.categoryModel.findOne(
-      {
-        menu: category.menu,
-      },
-      undefined,
-      { sort: { position: -1 } },
-    );
-
-    // Is last same as this category
-    return category._id.equals(last._id);
   }
 
   async getNext(
