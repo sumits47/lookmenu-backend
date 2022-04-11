@@ -16,6 +16,7 @@ import { PlaceService } from '../place/places.service';
 import { CategoryService } from './category.service';
 import { CreateMenuInput } from './dto/create-menu';
 import { UpdateMenuInput } from './dto/update-menu';
+import { ItemService } from './item.service';
 import { MenuService } from './menu.service';
 
 @Controller('menus')
@@ -24,6 +25,7 @@ export class MenuController {
     private placeService: PlaceService,
     private menuService: MenuService,
     private categoryService: CategoryService,
+    private itemService: ItemService,
   ) {}
 
   @UseGuards(AuthGuard('jwt'))
@@ -72,5 +74,10 @@ export class MenuController {
   @Get(':id/categories')
   menuCategories(@Param('id') id: string) {
     return this.categoryService.findAllByMenu(id);
+  }
+
+  @Get(':id/items')
+  menuItems(@Param('id') id: string) {
+    return this.itemService.findAllByMenu(id);
   }
 }

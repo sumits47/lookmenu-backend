@@ -13,6 +13,20 @@ import { PlaceDocument } from 'src/models/place.schema';
 export class ItemService {
   constructor(@InjectModel(Item.name) private itemModel: Model<ItemDocument>) {}
 
+  findAllByMenu(menuId: string | Types.ObjectId) {
+    return this.itemModel.find(
+      { menu: new Types.ObjectId(menuId) },
+      undefined,
+      {
+        sort: {
+          category: 1,
+          group: 1,
+          position: 1,
+        },
+      },
+    );
+  }
+
   findAllByGroup(groupId: string | Types.ObjectId) {
     return this.itemModel.find(
       { group: new Types.ObjectId(groupId) },
