@@ -15,6 +15,10 @@ export class PlaceService {
     private menuService: MenuService,
   ) {}
 
+  placeIds() {
+    return this.placeModel.find({}, '_id');
+  }
+
   findByUser(userId: string) {
     return this.placeModel.find({ userId });
   }

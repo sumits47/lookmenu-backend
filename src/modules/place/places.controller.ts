@@ -8,6 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from 'src/libs/decorators';
 import { UserPayload } from 'src/types/auth0';
@@ -21,12 +22,24 @@ export class PlaceController {
   constructor(
     private placeService: PlaceService,
     private menuService: MenuService,
+    private cfgService: ConfigService,
   ) {}
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
   userPlaces(@CurrentUser() user: UserPayload) {
     return this.placeService.findByUser(user.sub);
+  }
+
+  @Get('demo')
+  findDemoPlace() {
+    const id = this.cfgService.get<string>('demoPlaceId');
+    return this.placeService.findById(id);
+  }
+
+  @Get('sitemap')
+  sitemap() {
+    return this.placeService.placeIds();
   }
 
   @UseGuards(AuthGuard('jwt'))
