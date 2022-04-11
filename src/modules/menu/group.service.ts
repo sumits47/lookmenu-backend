@@ -8,10 +8,12 @@ import { Model, Types, ClientSession } from 'mongoose';
 import { Group, GroupDocument } from 'src/models/group.schema';
 import { MenuDocument } from 'src/models/menu.schema';
 import { PlaceDocument } from 'src/models/place.schema';
+import { ItemService } from './item.service';
 
 @Injectable()
 export class GroupService {
   constructor(
+    private itemService: ItemService,
     @InjectModel(Group.name) private groupModel: Model<GroupDocument>,
   ) {}
 
@@ -32,6 +34,7 @@ export class GroupService {
     categoryId: string | Types.ObjectId,
     session?: ClientSession,
   ) {
+    // Create Group
     const [group] = await this.groupModel.create(
       [
         {
@@ -43,12 +46,21 @@ export class GroupService {
       ],
       { session },
     );
+
+    // Create item
+    await this.itemService.createDefaultItem(
+      menuId,
+      categoryId,
+      group._id,
+      session,
+    );
+
     return group;
   }
 
   async ownedByUser(groupId: string, userId: string): Promise<GroupDocument> {
     // Look for matching document
-    const found = await this.groupModel.findById(groupId).populate('menu');
+    const found = await this.findById(groupId).populate('menu');
 
     // If not found
     if (!found) throw new NotFoundException();
@@ -82,8 +94,24 @@ export class GroupService {
     });
   }
 
-  deleteById(id: string | Types.ObjectId) {
-    return this.groupModel.findByIdAndDelete(id);
+  async deleteById(id: string | Types.ObjectId) {
+    // Create session
+    const session = await this.groupModel.startSession();
+
+    // Wrap in transaction
+    await session.withTransaction(async () => {
+      // Delete items
+      await this.itemService.deleteAllByGroup(id, session);
+
+      // Delete group
+      await this.groupModel.deleteOne(
+        { _id: new Types.ObjectId(id) },
+        { session },
+      );
+    });
+
+    // End session
+    await session.endSession();
   }
 
   deleteAllByMenu(menuId: string | Types.ObjectId, session?: ClientSession) {

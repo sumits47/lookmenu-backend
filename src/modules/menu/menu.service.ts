@@ -9,6 +9,7 @@ import { Menu, MenuDocument } from 'src/models/menu.schema';
 import { Place, PlaceDocument } from 'src/models/place.schema';
 import { CategoryService } from './category.service';
 import { GroupService } from './group.service';
+import { ItemService } from './item.service';
 
 @Injectable()
 export class MenuService {
@@ -17,6 +18,7 @@ export class MenuService {
     @InjectModel(Menu.name) private menuModel: Model<MenuDocument>,
     private categoryService: CategoryService,
     private groupService: GroupService,
+    private itemService: ItemService,
   ) {}
 
   findAllByPlace(placeId: string | Types.ObjectId) {
@@ -82,6 +84,9 @@ export class MenuService {
 
     // Wrap in transaction
     await session.withTransaction(async () => {
+      // Delete items
+      await this.itemService.deleteAllByMenu(id, session);
+
       // Delete groups
       await this.groupService.deleteAllByMenu(id, session);
 
@@ -109,17 +114,27 @@ export class MenuService {
     // Get menuIds
     const menuIds: Types.ObjectId[] = menus.map((menu) => menu._id);
 
-    // Delete Categories
-    await Promise.all(
-      menuIds.map((id) => this.categoryService.deleteAllByMenu(id, session)),
-    );
-
     // Delete menus
     await this.menuModel.deleteMany(
       {
         _id: { $in: menuIds },
       },
       { session },
+    );
+
+    // Delete Categories
+    await Promise.all(
+      menuIds.map((id) => this.categoryService.deleteAllByMenu(id, session)),
+    );
+
+    // Delete Groups
+    await Promise.all(
+      menuIds.map((id) => this.groupService.deleteAllByMenu(id, session)),
+    );
+
+    // Delete Items
+    await Promise.all(
+      menuIds.map((id) => this.itemService.deleteAllByMenu(id, session)),
     );
   }
 

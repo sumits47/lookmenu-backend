@@ -9,12 +9,14 @@ import { Category, CategoryDocument } from 'src/models/category.schema';
 import { MenuDocument } from 'src/models/menu.schema';
 import { PlaceDocument } from 'src/models/place.schema';
 import { GroupService } from './group.service';
+import { ItemService } from './item.service';
 
 @Injectable()
 export class CategoryService {
   constructor(
-    private groupService: GroupService,
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
+    private groupService: GroupService,
+    private itemService: ItemService,
   ) {}
 
   findAllByMenu(menuId: string | Types.ObjectId) {
@@ -97,6 +99,9 @@ export class CategoryService {
 
     // Wrap in transaction
     await session.withTransaction(async () => {
+      // Delete items
+      await this.itemService.deleteAllByCategory(id, session);
+
       // Delete groups
       await this.groupService.deleteAllByCategory(id, session);
 
